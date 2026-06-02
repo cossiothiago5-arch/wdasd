@@ -1155,6 +1155,11 @@ function checkout() {
     showToast('El carrito está vacío');
     return;
   }
+  if (!auth.isLoggedIn()) {
+    showToast('⚠️ Inicia sesión para poder pagar.');
+    openAuthModal('login');
+    return;
+  }
   openPaymentModal();
 }
 
@@ -1191,6 +1196,12 @@ function setupPaymentListeners() {
 }
 
 function processPayment() {
+  if (!auth.isLoggedIn()) {
+    closePaymentModal();
+    showToast('⚠️ Debes iniciar sesión antes de procesar el pago.');
+    openAuthModal('login');
+    return;
+  }
   const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
   const total = cart.getTotal().toFixed(2);
   
