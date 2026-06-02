@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NexusStore — Tu tienda de juegos</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">⬡ NEXUSSTORE</a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon" style="filter:invert(1)"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="#" onclick="switchView('store'); return false;">TIENDA</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchView('library'); return false;">BIBLIOTECA</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchView('community'); return false;">COMUNIDAD</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchView('news'); return false;">NOTICIAS</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-3">
+        <input id="searchInput" class="search-input" type="text" placeholder="Buscar juego..."/>
+
+        <!-- Botón dinámico: login o usuario -->
+        <div id="authNavArea">
+          <button class="auth-nav-btn" onclick="openAuthModal('login')">
+            <span>👤</span> Iniciar Sesión
+          </button>
+        </div>
+
+        <button class="cart-btn" onclick="toggleCart()">
+          🛒 Carrito
+          <span class="cart-badge" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-6">
+        <div class="d-flex flex-column gap-3">
+          <div>
+            <div class="text-uppercase" style="color:var(--accent);font-size:.75rem;letter-spacing:3px;margin-bottom:.5rem;">OFERTA DEL DÍA</div>
+            <h1 class="hero-title">Explora mundos.<br><span>Juega sin límites.</span></h1>
+          </div>
+          <p class="hero-sub">Más de 500 títulos con los mejores precios. Descarga al instante, juega para siempre.</p>
+          <div class="d-flex gap-2">
+            <button class="hero-cta" onclick="scrollToGames()">Ver Catálogo</button>
+            <button class="filter-btn" onclick="applyFilter('oferta')">🔥 Ver Ofertas</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-featured-placeholder">
+          <img class="hero-featured" src="images/logo.jpg" alt="Imagen destacada" onerror="this.src='https://via.placeholder.com/760x420/1a1f2e/ffffff?text=Imagen+no+disponible'" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CATÁLOGO ══ -->
+<main class="container py-5" id="gamesSection">
+
+  <!-- Barra de filtros -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <h2 class="section-title">CATÁLOGO</h2>
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-btn active" onclick="applyFilter('todos')">Todos</button>
+      <button class="filter-btn" onclick="applyFilter('accion')">Acción</button>
+      <button class="filter-btn" onclick="applyFilter('rpg')">RPG</button>
+      <button class="filter-btn" onclick="applyFilter('estrategia')">Estrategia</button>
+      <button class="filter-btn" onclick="applyFilter('indie')">Indie</button>
+      <button class="filter-btn" onclick="applyFilter('deportes')">Deportes</button>
+      <button class="filter-btn" onclick="applyFilter('oferta')">🔥 Oferta</button>
+      <button class="filter-btn" onclick="applyFilter('gratis')">Gratis</button>
+    </div>
+  </div>
+
+  <!-- Grilla de juegos -->
+  <div class="row g-3" id="gameGrid"></div>
+  <p id="noResults" class="text-center py-5" style="color:var(--text-muted);display:none;">
+    No se encontraron juegos.
+  </p>
+
+</main>
+
+<!-- ══ SECCIÓN: BIBLIOTECA ══ -->
+<section id="librarySection" style="display:none;" class="container py-5">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="section-title">📚 MI BIBLIOTECA</h2>
+    <span style="color:var(--text-muted);font-size:0.9rem;">Tus juegos comprados</span>
+  </div>
+
+  <div id="libraryContent">
+    <div class="alert alert-info" style="background:rgba(0,229,255,.1);border:1px solid var(--accent);color:var(--text-main);">
+      <p style="margin:0;">📌 <strong>Inicia sesión</strong> para ver tus juegos comprados aquí.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SECCIÓN: COMUNIDAD ══ -->
+<section id="communitySection" style="display:none;" class="container py-5">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="section-title">👥 COMUNIDAD</h2>
+    <span style="color:var(--text-muted);font-size:0.9rem;">Conecta con otros jugadores</span>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="community-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:2rem;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:1rem;">💬</div>
+        <h4 style="color:var(--text-main);margin-bottom:0.5rem;">Foro de Discusión</h4>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Comparte tips y estrategias con la comunidad</p>
+        <button class="hero-cta" onclick="showAlert('🔧 En construcción')">Visitar Foro</button>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="community-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:2rem;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🏆</div>
+        <h4 style="color:var(--text-main);margin-bottom:0.5rem;">Leaderboards</h4>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Compite y sube en los rankings</p>
+        <button class="hero-cta" onclick="showAlert('🔧 En construcción')">Ver Rankings</button>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="community-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:2rem;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎮</div>
+        <h4 style="color:var(--text-main);margin-bottom:0.5rem;">Eventos</h4>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Torneos y eventos exclusivos</p>
+        <button class="hero-cta" onclick="showAlert('🔧 En construcción')">Ver Eventos</button>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="community-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:2rem;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎬</div>
+        <h4 style="color:var(--text-main);margin-bottom:0.5rem;">Streams</h4>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Vive transmisiones en directo</p>
+        <button class="hero-cta" onclick="showAlert('🔧 En construcción')">Ver Streams</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SECCIÓN: NOTICIAS ══ -->
+<section id="newsSection" style="display:none;" class="container py-5">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="section-title">📰 NOTICIAS</h2>
+    <span style="color:var(--text-muted);font-size:0.9rem;">Últimas actualizaciones de juegos</span>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <!-- Noticia Principal -->
+      <div class="news-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem;">
+        <div style="width:100%;height:250px;overflow:hidden;">
+          <img src="images/cologne.png" alt="Imagen destacada" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.src='https://via.placeholder.com/760x250/1a1f2e/ffffff?text=Imagen+no+disponible'" />
+        </div>
+        <div style="padding:2rem;">
+          <span style="color:var(--accent);font-size:0.8rem;font-weight:600;text-transform:uppercase;">DESTACADO</span>
+          <h3 style="color:var(--text-main);margin:0.5rem 0;">IEM de Colonia 2026 </h3>
+          <p style="color:var(--text-muted);margin:1rem 0;font-size:0.9rem;">
+            ¡El Major IEM de Colonia 2026 está a la vuelta de la esquina! Los equipos están haciendo los últimos ajustes, puliendo sus estrategias y cruzando los dedos para no enfrentarse a Vitality hasta la gran final. Eso solo puede significar una cosa: ¡ya están a la venta las pegatinas de equipos y de autógrafos del torneo!
+          </p>
+          <small style="color:var(--text-muted);">Hace 2 horas</small>
+        </div>
+      </div>
+
+      <!-- Otras Noticias -->
+      <div class="news-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;">
+          <div style="flex:1;">
+            <h4 style="color:var(--text-main);margin:0 0 0.5rem;">Cyberpunk 2077 anuncia expansión</h4>
+            <p style="color:var(--text-muted);margin:0;font-size:0.85rem;">Nuevo contenido y misiones en Night City</p>
+            <small style="color:var(--text-muted);">Hace 5 horas</small>
+          </div>
+          <div style="font-size:2rem;">🌃</div>
+        </div>
+      </div>
+
+      <div class="news-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;">
+          <div style="flex:1;">
+            <h4 style="color:var(--text-main);margin:0 0 0.5rem;">Hades obtiene 5 Premios de Juego</h4>
+            <p style="color:var(--text-muted);margin:0;font-size:0.85rem;">Reconocimiento internacional para el roguelike grecorromano</p>
+            <small style="color:var(--text-muted);">Hace 1 día</small>
+          </div>
+          <div style="font-size:2rem;">🏆</div>
+        </div>
+      </div>
+
+      <div class="news-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;">
+          <div style="flex:1;">
+            <h4 style="color:var(--text-main);margin:0 0 0.5rem;">Star Wars Jedi: Survivor en descuento</h4>
+            <p style="color:var(--text-muted);margin:0;font-size:0.85rem;">-50% en la continuación de la aclamada saga</p>
+            <small style="color:var(--text-muted);">Hace 1 día</small>
+          </div>
+          <div style="font-size:2rem;">💰</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar de Noticias -->
+    <div class="col-lg-4">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;">
+        <h4 style="color:var(--text-main);margin-bottom:1rem;">Tendencias</h4>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div style="padding-bottom:1rem;border-bottom:1px solid var(--border);">
+            <div style="color:var(--accent);font-weight:600;margin-bottom:0.3rem;">🔥 #1 Trending</div>
+            <small style="color:var(--text-muted);">
+IEM de Colonia 2026 en Counter Strik 2</small>
+          </div>
+          <div style="padding-bottom:1rem;border-bottom:1px solid var(--border);">
+            <div style="color:var(--accent);font-weight:600;margin-bottom:0.3rem;">🔥 #2 Trending</div>
+            <small style="color:var(--text-muted);">Ofertas del fin de semana</small>
+          </div>
+          <div>
+            <div style="color:var(--accent);font-weight:600;margin-bottom:0.3rem;">🔥 #3 Trending</div>
+            <small style="color:var(--text-muted);">Próximos lanzamientos</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div>⬡ <span>NEXUSSTORE</span> — Proyecto universitario de desarrollo web · 2025</div>
+  <div class="mt-1">Hecho con Bootstrap 5 + JavaScript vanilla</div>
+</footer>
+
+<!-- ══ TOAST ══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══ CARRITO ══ -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="cart-header-title">🛒 Carrito</span>
+    <button style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;" onclick="toggleCart()">✕</button>
+  </div>
+  <div id="cartItems"></div>
+  <div id="cartTotalBlock" style="display:none;">
+    <div class="cart-total-row">
+      <span>Total</span>
+      <span class="cart-total-price" id="cartTotal">$0.00</span>
+    </div>
+    <button class="checkout-btn" onclick="checkout()">FINALIZAR COMPRA</button>
+  </div>
+</div>
+
+<!-- ══ MODAL DETALLE DE JUEGO ══ -->
+<div class="modal fade" id="gameModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Juego</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-thumb mb-3" id="modalThumb"></div>
+        <div class="d-flex flex-wrap gap-2 mb-2" id="modalTags"></div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <span id="modalRating" style="color:#fbbf24;font-size:.9rem;"></span>
+          <span id="modalPrice" style="font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--accent);"></span>
+        </div>
+        <p class="modal-desc" id="modalDesc"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn"
+          style="background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);"
+          data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="modal-buy-btn" id="modalAddBtn">Agregar al Carrito</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL AUTH — LOGIN / REGISTRO / RECUPERAR
+     ══════════════════════════════════════════ -->
+<div class="auth-overlay" id="authOverlay" onclick="closeAuthModal()"></div>
+<div class="auth-modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+
+  <!-- ── Encabezado ── -->
+  <div class="auth-modal-header">
+    <span class="auth-logo">⬡</span>
+    <button class="auth-close-btn" onclick="closeAuthModal()" aria-label="Cerrar">✕</button>
+  </div>
+
+  <!-- ════ PANEL: LOGIN ════ -->
+  <div class="auth-panel" id="panelLogin">
+    <h2 class="auth-title" id="authModalTitle">Bienvenido de vuelta</h2>
+    <p class="auth-sub">Ingresá a tu cuenta de NEXUSSTORE</p>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Correo electrónico</label>
+      <input class="auth-input" id="loginEmail" type="email" placeholder="tu@email.com" autocomplete="email"/>
+    </div>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Contraseña</label>
+      <div class="auth-input-wrap">
+        <input class="auth-input" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password"/>
+        <button class="auth-eye-btn" onclick="togglePwdVisibility('loginPassword', this)" tabindex="-1">👁</button>
+      </div>
+      <div class="auth-attempts-bar" id="attemptsBar" style="display:none;">
+        <span class="attempts-dot" id="dot1"></span>
+        <span class="attempts-dot" id="dot2"></span>
+        <span class="attempts-dot" id="dot3"></span>
+        <span class="attempts-label" id="attemptsLabel">Intentos restantes: 3</span>
+      </div>
+    </div>
+
+    <div class="auth-error" id="loginError" style="display:none;"></div>
+    <div class="auth-locked-msg" id="loginLockedMsg" style="display:none;">
+      🔒 Cuenta bloqueada por 5 minutos por múltiples intentos fallidos.<br>
+      <span id="lockCountdown"></span>
+    </div>
+
+    <div class="d-flex justify-content-end mb-3">
+      <button class="auth-link-btn" onclick="switchPanel('recover')">¿Olvidaste tu contraseña?</button>
+    </div>
+
+    <button class="auth-submit-btn" id="loginSubmitBtn" onclick="handleLogin()">INGRESAR</button>
+
+    <div class="auth-divider"><span>o</span></div>
+    <p class="auth-switch-text">
+      ¿No tenés cuenta?
+      <button class="auth-link-btn" onclick="switchPanel('register')">Crear cuenta</button>
+    </p>
+  </div>
+
+  <!-- ════ PANEL: REGISTRO ════ -->
+  <div class="auth-panel" id="panelRegister" style="display:none;">
+    <h2 class="auth-title">Crear cuenta</h2>
+    <p class="auth-sub">Unite a la comunidad NEXUSSTORE</p>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Nombre de usuario</label>
+      <input class="auth-input" id="regUsername" type="text" placeholder="GamerPro123" autocomplete="username"/>
+    </div>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Correo electrónico</label>
+      <input class="auth-input" id="regEmail" type="email" placeholder="tu@email.com" autocomplete="email"/>
+    </div>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Contraseña</label>
+      <div class="auth-input-wrap">
+        <input class="auth-input" id="regPassword" type="password" placeholder="••••••••"
+               autocomplete="new-password" oninput="checkPasswordStrength(this.value)"/>
+        <button class="auth-eye-btn" onclick="togglePwdVisibility('regPassword', this)" tabindex="-1">👁</button>
+      </div>
+      <!-- Indicador de fuerza -->
+      <div class="pwd-strength-bar">
+        <div class="pwd-strength-fill" id="pwdStrengthFill"></div>
+      </div>
+      <ul class="pwd-rules" id="pwdRules">
+        <li class="pwd-rule" id="rule-len">  <span class="rule-icon">✗</span> Mínimo 8 caracteres</li>
+        <li class="pwd-rule" id="rule-upper"><span class="rule-icon">✗</span> Al menos una mayúscula (A–Z)</li>
+        <li class="pwd-rule" id="rule-num">  <span class="rule-icon">✗</span> Al menos un número (0–9)</li>
+        <li class="pwd-rule" id="rule-spec"> <span class="rule-icon">✗</span> Al menos un carácter especial (!@#$…)</li>
+      </ul>
+    </div>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Confirmar contraseña</label>
+      <div class="auth-input-wrap">
+        <input class="auth-input" id="regConfirm" type="password" placeholder="••••••••" autocomplete="new-password"/>
+        <button class="auth-eye-btn" onclick="togglePwdVisibility('regConfirm', this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+
+    <div class="auth-error" id="regError" style="display:none;"></div>
+
+    <button class="auth-submit-btn" onclick="handleRegister()">CREAR CUENTA</button>
+
+    <div class="auth-divider"><span>o</span></div>
+    <p class="auth-switch-text">
+      ¿Ya tenés cuenta?
+      <button class="auth-link-btn" onclick="switchPanel('login')">Iniciar sesión</button>
+    </p>
+  </div>
+
+  <!-- ════ PANEL: RECUPERAR CONTRASEÑA ════ -->
+  <div class="auth-panel" id="panelRecover" style="display:none;">
+    <button class="auth-back-btn" onclick="switchPanel('login')">← Volver</button>
+    <h2 class="auth-title">Recuperar contraseña</h2>
+    <p class="auth-sub">Te enviaremos un enlace de recuperación al correo asociado a tu cuenta.</p>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Correo electrónico</label>
+      <input class="auth-input" id="recoverEmail" type="email" placeholder="tu@email.com" autocomplete="email"/>
+    </div>
+
+    <div class="auth-error" id="recoverError" style="display:none;"></div>
+    <div class="auth-success" id="recoverSuccess" style="display:none;"></div>
+
+    <button class="auth-submit-btn" onclick="handleRecover()">ENVIAR ENLACE</button>
+  </div>
+
+</div>
+<!-- ══ FIN MODAL AUTH ══ -->
+
+<!-- ══ MODAL DE PAGO ══ -->
+<div class="payment-overlay" id="paymentOverlay" onclick="closePaymentModal()"></div>
+<div class="payment-modal" id="paymentModal">
+  <div class="payment-modal-header">
+    <h2 class="payment-title">Seleccionar método de pago</h2>
+    <button class="payment-close-btn" onclick="closePaymentModal()">✕</button>
+  </div>
+  <div class="payment-modal-body">
+    <div class="payment-summary">
+      <span>Total a pagar:</span>
+      <span class="payment-amount" id="paymentAmount">$0.00</span>
+    </div>
+    <div class="payment-methods">
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="credit_card" checked />
+        <span class="payment-option-icon">💳</span>
+        <span class="payment-option-text">
+          <strong>Tarjeta de Crédito/Débito</strong>
+          <small>Visa, Mastercard, American Express</small>
+        </span>
+      </label>
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="paypal" />
+        <span class="payment-option-icon">🅿️</span>
+        <span class="payment-option-text">
+          <strong>PayPal</strong>
+          <small>Pago rápido y seguro con tu cuenta PayPal</small>
+        </span>
+      </label>
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="bank_transfer" />
+        <span class="payment-option-icon">🏦</span>
+        <span class="payment-option-text">
+          <strong>Transferencia Bancaria</strong>
+          <small>Transferencia directa a nuestra cuenta</small>
+        </span>
+      </label>
+    </div>
+    <div id="cardDetailsForm" class="card-details-form" style="display:none;">
+      <div class="form-group">
+        <label>Número de tarjeta</label>
+        <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vencimiento</label>
+          <input type="text" placeholder="MM/YY" maxlength="5" />
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="text" placeholder="123" maxlength="3" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nombre titular</label>
+        <input type="text" placeholder="Juan Pérez" />
+      </div>
+    </div>
+  </div>
+  <div class="payment-modal-footer">
+    <button class="payment-cancel-btn" onclick="closePaymentModal()">Cancelar</button>
+    <button class="payment-confirm-btn" onclick="processPayment()">Confirmar Pago</button>
+  </div>
+</div>
+<!-- ══ FIN MODAL DE PAGO ══ -->
+
+<!-- ══ MODAL CAMBIAR CONTRASEÑA (Reset) ══ -->
+<div class="reset-password-overlay" id="resetPasswordOverlay" onclick="closeResetPasswordModal()"></div>
+<div class="reset-password-modal" id="resetPasswordModal">
+  <div class="reset-password-header">
+    <h2 class="reset-password-title">Cambiar contraseña</h2>
+    <button class="reset-password-close-btn" onclick="closeResetPasswordModal()">✕</button>
+  </div>
+
+  <div class="reset-password-body">
+    <p class="reset-password-subtitle">Ingresá tu nueva contraseña. Debe ser segura y diferente a la anterior.</p>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Nueva contraseña</label>
+      <div class="auth-input-wrap">
+        <input class="auth-input" id="resetNewPassword" type="password" placeholder="••••••••"
+               oninput="checkResetPasswordStrength(this.value)"/>
+        <button class="auth-eye-btn" onclick="togglePwdVisibility('resetNewPassword', this)" tabindex="-1">👁</button>
+      </div>
+      <!-- Indicador de fuerza -->
+      <div class="pwd-strength-bar">
+        <div class="pwd-strength-fill" id="resetPwdStrengthFill"></div>
+      </div>
+      <ul class="pwd-rules" id="resetPwdRules">
+        <li class="pwd-rule" id="reset-rule-len">  <span class="rule-icon">✗</span> Mínimo 8 caracteres</li>
+        <li class="pwd-rule" id="reset-rule-upper"><span class="rule-icon">✗</span> Al menos una mayúscula (A–Z)</li>
+        <li class="pwd-rule" id="reset-rule-num">  <span class="rule-icon">✗</span> Al menos un número (0–9)</li>
+        <li class="pwd-rule" id="reset-rule-spec"> <span class="rule-icon">✗</span> Al menos un carácter especial (!@#$…)</li>
+      </ul>
+    </div>
+
+    <div class="auth-field-group">
+      <label class="auth-label">Confirmar contraseña</label>
+      <div class="auth-input-wrap">
+        <input class="auth-input" id="resetConfirmPassword" type="password" placeholder="••••••••"
+               oninput="validateResetPasswordMatch()"/>
+        <button class="auth-eye-btn" onclick="togglePwdVisibility('resetConfirmPassword', this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+
+    <div class="auth-error" id="resetPwdError" style="display:none;"></div>
+  </div>
+
+  <div class="reset-password-footer">
+    <button class="reset-password-cancel-btn" onclick="closeResetPasswordModal()">Cancelar</button>
+    <button class="reset-password-confirm-btn" onclick="handleResetPassword()">Cambiar contraseña</button>
+  </div>
+</div>
+<!-- ══ FIN MODAL CAMBIAR CONTRASEÑA ══ -->
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Lógica propia -->
+<script src="app.js"></script>
+
+</body>
+</html>
