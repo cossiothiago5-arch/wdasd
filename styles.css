@@ -95,6 +95,20 @@ body {
 }
 .user-nav-logout:hover { color: var(--accent2); }
 
+/* Botón de cierre de sesión visible en navbar */
+.user-logout-btn {
+  background: var(--accent);
+  color: #000;
+  border: 1px solid rgba(0,0,0,.06);
+  padding: .35rem .85rem;
+  border-radius: 6px;
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .08s;
+}
+.user-logout-btn:hover { opacity: .9; transform: translateY(-1px); }
+
 .cart-btn {
   background: none;
   border: 1px solid var(--accent);
@@ -343,11 +357,24 @@ body {
 .modal-title { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; }
 .btn-close-white { filter: invert(1) grayscale(1); }
 .modal-thumb {
-  width: 100%; height: 220px;
-  object-fit: cover; border-radius: 6px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9; /* mantiene proporción responsiva */
+  max-height: min(60vh, 420px);
+  border-radius: 6px;
   background: linear-gradient(135deg, #1a1f2e, #0f1522);
   display: flex; align-items: center; justify-content: center;
   font-size: 5rem;
+  overflow: hidden; /* evita que la imagen sobresalga del contenedor */
+}
+/* Imagen dentro del modal de juego: ocupar el contenedor sin salirse */
+.modal-thumb img,
+.modal-thumb-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* mostrar la imagen completa sin recortar */
+  display: block;
+  object-position: center;
 }
 .modal-desc { color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
 .modal-buy-btn {
@@ -392,6 +419,26 @@ body {
   display: flex; gap: .8rem; align-items: center;
   padding: .7rem 0;
   border-bottom: 1px solid var(--border);
+}
+.cart-item-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-deep);
+}
+.cart-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cart-item-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
 }
 .cart-item-emoji { font-size: 2rem; }
 .cart-item-name {
@@ -972,6 +1019,10 @@ main, section, .container, .container-fluid {
   max-width: 450px;
   box-shadow: 0 20px 60px rgba(0,0,0,.5);
   display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   flex-direction: column;
   z-index: 3001;
 }

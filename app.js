@@ -47,9 +47,24 @@ class Cart {
   getCount() { return this.items.length; }
 
   add(game) {
+    // Debug: log state to help diagnose add failures
+    try {
+      console.log('Cart.add called', { id: game.id, has: this.has(game.id), authLogged: auth.isLoggedIn() });
+    } catch (e) { /* ignore */ }
+
     if (this.has(game.id)) return false;
+    if (auth.isLoggedIn() && getUserLibrary().some(p => p.id === game.id)) return false;
     this.items.push(game);
     return true;
+  }
+
+  _renderBadge() {
+    const badge = document.getElementById('cartCount');
+    if (!badge) return;
+    const count = this.getCount();
+    badge.textContent = count;
+    // Mostrar u ocultar según cantidad
+    badge.style.display = count > 0 ? 'inline-flex' : 'none';
   }
 
   remove(id) { this.items = this.items.filter(item => item.id !== id); }
@@ -61,23 +76,23 @@ class Cart {
     this._renderItems();
     this._renderTotal();
   }
-
-  _renderBadge() {
-    document.getElementById('cartCount').textContent = this.getCount();
-  }
-
   _renderItems() {
     const itemsEl = document.getElementById('cartItems');
-      if (this.items.length === 0) {
+    if (this.items.length === 0) {
       itemsEl.innerHTML = '<div class="cart-empty">Tu carrito está vacío</div>';
       return;
     }
     itemsEl.innerHTML = this.items.map(item => `
       <div class="cart-item">
-        <span class="cart-item-name">${item.title}</span>
-        <span class="cart-item-price">
-          ${item.price === 0 ? 'Gratis' : '$' + item.price.toFixed(2)}
-        </span>
+        <div class="cart-item-thumb">
+          <img src="${item.img}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/64x64/1a1f2e/ffffff?text=?'" />
+        </div>
+        <div class="cart-item-details">
+          <span class="cart-item-name">${item.title}</span>
+          <span class="cart-item-price">
+            ${item.price === 0 ? 'Gratis' : '$' + item.price.toFixed(2)}
+          </span>
+        </div>
         <button class="cart-remove" onclick="cart.remove(${item.id}); cart.render(); catalog.render();">✕</button>
       </div>
     `).join('');
@@ -152,6 +167,12 @@ class GameCatalog {
 
   _buildCard(game) {
     const inCart = cart.has(game.id);
+    const userLibrary = auth.isLoggedIn() ? getUserLibrary() : [];
+    const isPurchased = userLibrary.some(p => p.id === game.id);
+    const buttonText = isPurchased ? 'Comprado' : inCart ? '✓' : '+';
+    const buttonDisabled = inCart || isPurchased ? 'disabled' : '';
+    const buttonClass = inCart || isPurchased ? 'added' : '';
+    const buttonAction = inCart || isPurchased ? 'void(0)' : 'addToCart(' + game.id + ')';
     return `
       <div class="col-6 col-md-4 col-lg-3">
         <div class="game-card" onclick="openModal(${game.id})">
@@ -165,10 +186,10 @@ class GameCatalog {
             <div class="game-footer">
               ${buildPriceHtml(game)}
               <button
-                class="add-cart-btn ${inCart ? 'added' : ''}"
-                onclick="event.stopPropagation(); addToCart(${game.id})"
-                ${inCart ? 'disabled' : ''}>
-                ${inCart ? '✓' : '+'}
+                class="add-cart-btn ${buttonClass}"
+                onclick="event.stopPropagation(); ${buttonAction}"
+                ${buttonDisabled}>
+                ${buttonText}
               </button>
             </div>
           </div>
@@ -839,6 +860,25 @@ function handleLogin() {
   if (result.ok) {
     closeAuthModal();
     renderNavAuth();
+    catalog.render();
+    // Si existe un backup de biblioteca para este usuario, ofrecer restaurarlo
+    const backupKey = `nexus_library_backup_${result.user.email}`;
+    const backup = sessionStorage.getItem(backupKey);
+    if (backup) {
+      try {
+        const parsed = JSON.parse(backup);
+        if (confirm('Se encontró una copia de seguridad de tu biblioteca guardada localmente. ¿Deseas restaurarla ahora?')) {
+          restoreLibraryBackup(result.user.email);
+        } else {
+          showToast('⚠️ Respaldo disponible pero no restaurado.');
+        }
+      } catch (e) {
+        // si falla el parseo, aún ofrecer restaurar
+        if (confirm('Se encontró una copia de seguridad de tu biblioteca. ¿Deseas restaurarla?')) {
+          restoreLibraryBackup(result.user.email);
+        }
+      }
+    }
     showToast(`👋 ¡Bienvenido, ${result.user.username}!`);
     return;
   }
@@ -919,6 +959,14 @@ function handleRegister() {
   if (loginResult.ok) {
     closeAuthModal();
     renderNavAuth();
+    catalog.render();
+    // Ofrecer restaurar backup tras registro+auto-login
+    const backupKeyR = `nexus_library_backup_${loginResult.user.email}`;
+    if (sessionStorage.getItem(backupKeyR)) {
+      if (confirm('Se encontró una copia de seguridad de tu biblioteca. ¿Restaurarla ahora?')) {
+        restoreLibraryBackup(loginResult.user.email);
+      }
+    }
     showToast(`🎮 ¡Cuenta creada! Bienvenido, ${loginResult.user.username}!`);
   }
 }
@@ -958,24 +1006,52 @@ function handleRecover() {
     ✅ ${result.message}
     <br><br>
     <strong>Para demostración:</strong>
-    <button class="auth-submit-btn" style="width:100%;margin-top:1rem;" onclick="openResetPasswordModal('${result.token}')">
+    <button class="auth-submit-btn" id="resetPasswordLinkBtn" style="width:100%;margin-top:1rem;">
       Cambiar contraseña
     </button>
   `;
   successEl.style.display = 'block';
   document.getElementById('recoverEmail').value = '';
+
+  const resetBtn = document.getElementById('resetPasswordLinkBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => openResetPasswordModal(result.token));
+  }
 }
 
 /** Maneja el cierre de sesión */
 function handleLogout() {
   const username = auth.currentUser?.username;
+  // Eliminar únicamente la biblioteca asociada al usuario actualmente logueado
+  const userEmail = auth.currentUser?.email;
+  if (userEmail) {
+    const key = `nexus_library_${userEmail}`;
+    const lib = sessionStorage.getItem(key);
+    if (lib) {
+      // Guardar una copia de seguridad antes de eliminar
+      const backupKey = `nexus_library_backup_${userEmail}`;
+      try {
+        const parsed = JSON.parse(lib);
+        const payload = { savedAt: Date.now(), data: parsed };
+        sessionStorage.setItem(backupKey, JSON.stringify(payload));
+      } catch (e) {
+        // Si no es JSON válido, guardar el string crudo
+        sessionStorage.setItem(backupKey, JSON.stringify({ savedAt: Date.now(), data: lib }));
+      }
+      sessionStorage.removeItem(key);
+      showToast('📦 Biblioteca respaldada localmente antes de cerrar sesión.');
+    }
+  }
+
   auth.logout();
   renderNavAuth();
-  showToast(`👋 Hasta luego, ${username}!`);
+  catalog.render();
+  showToast(`👋 Hasta luego, ${username}! (tu biblioteca local fue borrada)`);
 }
 
 /** Abre el modal para cambiar contraseña durante recuperación */
 function openResetPasswordModal(token) {
+  console.log('openResetPasswordModal called', { token });
   // Guardar token temporalmente en la ventana
   window._resetPasswordToken = token;
 
@@ -1007,6 +1083,7 @@ function closeResetPasswordModal() {
 /** Maneja el envío del formulario de cambio de contraseña */
 function handleResetPassword() {
   const token = window._resetPasswordToken;
+  console.log('handleResetPassword called', { token });
   const newPwd = document.getElementById('resetNewPassword').value;
   const confirmPwd = document.getElementById('resetConfirmPassword').value;
   const errorEl = document.getElementById('resetPwdError');
@@ -1030,6 +1107,12 @@ function handleResetPassword() {
   document.getElementById('resetConfirmPassword').classList.remove('mismatch');
 
   // Procesar reset de contraseña
+  if (!token) {
+    errorEl.textContent = '⚠️ Token inválido o expirado. Solicita un nuevo enlace.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
   const result = auth.resetPassword(token, newPwd);
 
   if (!result.ok) {
@@ -1113,7 +1196,7 @@ function renderNavAuth() {
           <span>👤</span>
           <span>${auth.currentUser.username}</span>
         </div>
-        <button class="user-nav-logout" onclick="handleLogout()" title="Cerrar sesión">⏻</button>
+        <button class="user-logout-btn" onclick="handleLogout()" title="Cerrar sesión">Cerrar sesión ⏻</button>
       </div>`;
   } else {
     area.innerHTML = `
@@ -1131,6 +1214,19 @@ function renderNavAuth() {
 function addToCart(id) {
   const game = catalog.games.find(g => g.id === id);
   if (!game) return;
+
+  // Debug: log attempts to add to cart
+  try {
+    console.log('addToCart called', { id, authLogged: auth.isLoggedIn(), cartHas: cart.has(id) });
+  } catch (e) { /* ignore */ }
+
+  if (auth.isLoggedIn()) {
+    const purchased = getUserLibrary().some(p => p.id === id);
+    if (purchased) {
+      showToast('⚠️ Ya tienes este juego en tu biblioteca.');
+      return;
+    }
+  }
   const added = cart.add(game);
   if (!added) return;
   cart.render();
@@ -1395,6 +1491,43 @@ function addToLibrary(gameId) {
   if (!library.includes(gameId)) {
     library.push(gameId);
     sessionStorage.setItem(key, JSON.stringify(library));
+  }
+}
+
+/** Restaura la biblioteca desde un backup creado al hacer logout (si existe) */
+function restoreLibraryBackup(email) {
+  if (!email) return false;
+  const backupKey = `nexus_library_backup_${email}`;
+  const key = `nexus_library_${email}`;
+  const raw = sessionStorage.getItem(backupKey);
+  if (!raw) return false;
+  try {
+    const payload = JSON.parse(raw);
+    const data = payload && payload.data ? payload.data : payload;
+    sessionStorage.setItem(key, JSON.stringify(data));
+    sessionStorage.removeItem(backupKey);
+    showToast('✅ Biblioteca restaurada desde el respaldo.');
+    // Si el usuario está logueado, refrescar la UI
+    if (auth.isLoggedIn() && auth.currentUser?.email === email) {
+      catalog.render();
+      renderLibrary();
+    }
+    return true;
+  } catch (e) {
+    // si el contenido no es JSON válido, intentar restaurarlo como string
+    try {
+      sessionStorage.setItem(key, raw);
+      sessionStorage.removeItem(backupKey);
+      showToast('✅ Biblioteca restaurada (formato crudo).');
+      if (auth.isLoggedIn() && auth.currentUser?.email === email) {
+        catalog.render();
+        renderLibrary();
+      }
+      return true;
+    } catch (e2) {
+      showToast('❌ No fue posible restaurar el respaldo.');
+      return false;
+    }
   }
 }
 
